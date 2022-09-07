@@ -1,0 +1,289 @@
+﻿@model IEnumerable<SimpleCrudDropdown.Models.Product>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<div class="row">
+    <div class="col-6">
+        @using (Html.BeginForm("Update", "Products", FormMethod.Post, new { @enctype = "multipart/form-data" }))
+        {
+        <div class="form-group">
+            <input type="hidden" id="hdnId" />
+            <label class="control-label">Product Name</label>
+            <input type="text" id="txtName" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label class="control-label">Group</label>
+            <input type="text" id="textGroup" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label class="control-label">Type</label>
+            <input type="text" id="textType" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label class="control-label">Purchase Date</label>
+            <input type="date" id="datePurchase" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label class="control-label">Product Image</label>
+            <input type="file" name="Photo" id="image" class="form-control" />
+        </div>
+        <div class="form-group mb-2">
+            <label class="control-label">Customer</label>
+            <select id="customer" class="form-control">
+                <option value="">Select</option>
+            </select>
+        </div>
+        <div class="form-group mb-2">
+            <input type="button" id="btnSave" onclick="Save()" class="btn btn-primary" value="Save" />
+            <input type="button" id="btnUpdate" onclick="Update()" class="btn btn-primary" value="Update" />
+            </div>
+        }
+    </div>
+   <div class="col-12">
+      <table id="tbl" class="table table-bordered">
+          <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Customer)
+                    </th>
+                  <th>
+                      @Html.DisplayNameFor(model => model.Name)
+                  </th>
+                  <th>
+                      @Html.DisplayNameFor(model => model.Group)
+                  </th>
+                  <th>
+                      @Html.DisplayNameFor(model => model.Type)
+                  </th>
+                  <th>
+                      @Html.DisplayNameFor(model => model.PurchaseDate)
+                  </th>
+                  <th>
+                      @Html.DisplayNameFor(model => model.PhotoPath)
+                  </th>
+                  <th>Action</th>
+              </tr>
+          </thead>
+          <tbody class="text-center">
+             @* <tr>
+                  <td>
+                      @Html.DisplayFor(modelItem => item.Name)
+                  </td>
+                  <td>
+                      @Html.DisplayFor(modelItem => item.Group)
+                  </td>
+                  <td>
+                      @Html.DisplayFor(modelItem => item.Type)
+                  </td>
+                  <td>
+                      @Html.DisplayFor(modelItem => item.PurchaseDate)
+                  </td>
+                      <td>
+                          <img src="~/Images/@item.Photo" alt="Photo Not Found" width="50" height="50" />
+                      </td>
+                     @*<td>
+                          @Html.DisplayFor(modelItem => item.PhotoPath, new{@class = "imgStyle"})
+                  </td>*@
+                  @*<td>
+                      @Html.DisplayFor(modelItem => item.Customer.Address)
+                  </td>*@
+                  @*<td>
+                      <a asp-action="Edit" asp-route-id="@item.OID">Edit</a> |
+                      <a asp-action="Details" asp-route-id="@item.OID">Details</a> |
+                      <a asp-action="Delete" asp-route-id="@item.OID">Delete</a>
+                  </td>
+              </tr>*@
+          </tbody>
+      </table>
+   </div>
+</div>
+@section scripts{
+   <script>
+        $(document).ready(function () {
+            getProducts()
+            getCustomer();
+            $("#btnSave").show();
+            $("#btnUpdate").hide();
+        });
+
+        var baseUrl = "https://localhost:7107/";
+
+        function getProducts(){
+            $.ajax({
+                url: baseUrl + "Products/GetProducts",
+                type : "GET",
+                dataType:"json",
+                contentType : "application/json",
+                success: function(res){
+                  var h = "";
+                  $.each(res.data, function(k, v){
+                        h += "<tr><td>" + v.customerID + "</td>";
+                        h += "<td>" + v.name + "</td>";
+                        h += "<td>" + v.group + "</td>";
+                        h += "<td>" + v.type + "</td>";
+                        h += "<td>" + v.purchaseDate + "</td>";
+                        h += "<td>" + v.photoPath + "</td>";
+                  h += "<td><button id='btnedit' class='btn btn-info me-2' title='Edit " + v.name +
+                     " s information' onclick='edit(" + v.oid + ")'  >Edit</button><button id='btnRemove' class='btn btn-danger' " + v.name +
+                     " onclick='remove(" + v.oid + ")'  >Delete</button> </td></tr>";
+                  $("#tbl tbody").html(h);
+                  });
+                }
+            });
+        }
+
+        function getCustomer() {
+            $("#customer option").remove();
+
+            $.ajax({
+                url: baseUrl + "Customers/GetCustomers",
+                type: "GET",
+                dataType: "json",
+                contextType: "application/josn",
+
+                success: function (res) {
+                    $('#customer').append($('<option>').text('Select').attr({ 'value': '' }));
+                    $.each(res.data, function (index, v) {
+                        $('#customer').append($('<option>').text(v.name).attr({ 'value': v.oid }));
+                    });
+                },
+                error: function(err){
+                  console.log(err);
+                }
+            });
+        }
+
+        function edit(id) {
+            $("#btnSave").hide();
+            $("#btnUpdate").show();
+            $.ajax({
+                url: "/Products/GetByID/" + id,
+                type: "GET",
+                contextType: "application/json",
+                dataType: "JSON",
+                success: function (output) {
+                    console.log(output.data)
+                    $("#hdnId").val(output.data.oid)
+                    $("#txtName").val(output.data.name)
+                    $("#textGroup").val(output.data.group)
+                    $("#textType").val(output.data.type)
+                    $("#datePurchase").val(output.data.purchaseDate)
+                    $("#image").val(output.data.photo)
+                    $("#customer").val(output.data.customerID)
+                },
+                error: function (er) {
+                    console.log(er)
+                }
+            })
+        }
+
+        function remove(id) {
+            $.ajax({
+                url: "/Products/Delete/" + id,
+                type: "post",
+                contextType: "application/json",
+                dataType: "JSON",
+                success: function (output) {
+                    console.log(output.data)
+                    getProducts();
+                    alert("Are you sure?");
+                },
+                error: function (er) {
+                    console.log(er)
+                }
+            })
+        }
+
+
+        //function remove(id) {
+        //    $.ajax({
+        //       url: "/Products/Delete/" + id,
+        //       type: "GET",
+        //       contextType: "application/json",
+        //       dataType: "JSON",
+        //       success: function(res){
+        //          console.log(res.data);
+        //          alert("Are you sure?");
+        //       },
+        //       error: function(err)
+        //       {
+        //          console.log(err);
+        //       }
+        //    });
+        //}
+
+        function Update() {
+            var obj = {
+                oid: $("#hdnId").val(),
+                name: $("#txtName").val(),
+                group: $("#textGroup").val(),
+                type: $("#textType").val(),
+                purchaseDate: $("#datePurchase").val(),
+                photo: $("#image").val(),
+                customerID: $("#customer").val()
+            }
+            console.log(obj)
+            $.ajax({
+                url: "/Products/Update",
+                method: "POST",
+                type: "application/json",
+                dataType: "JSON",
+                data: obj,
+                success: function (output) {
+                    clearAll();
+                    getProducts();
+                    $("#btnSave").show();
+                    $("#btnUpdate").hide();
+                },
+                error: function (er) {
+                    console.log(er)
+                }
+            })
+        }
+
+        function Save() {
+            var obj = {
+                oid: $("#hdnId").val(),
+                name: $("#txtName").val(),
+                group: $("#textGroup").val(),
+                type: $("#textType").val(),
+                purchaseDate: $("#datePurchase").val(),
+                photoPath: $("#image").val(),
+                customerID: $("#customer").val()
+            }
+            console.log(obj)
+            $.ajax({
+                url: "/Products/Save",
+                method: "POST",
+                type: "application/json",
+                dataType: "JSON",
+                data: obj,
+                success: function (output) {
+                    clearAll();
+                    getProducts();
+                },
+                error: function (er) {
+                    console.log(er)
+                }
+            })
+        }
+
+        function clearAll() {
+            $("#hdnId").val('');
+            $("#txtName").val('');
+            $("#textGroup").val('');
+            $("#textType").val('');
+            $("#datePurchase").val('');
+            $("#image").val('');
+            $("#customer").val("");
+        }
+
+   </script>
+}
